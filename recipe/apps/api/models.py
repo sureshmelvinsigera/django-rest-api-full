@@ -32,3 +32,23 @@ class Recipe(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Review(models.Model):
+    recipe = models.ForeignKey(Recipe, related_name='reviews',
+                               on_delete=models.CASCADE)
+    comment = models.TextField(blank=True)
+    reviewed_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f'{self.recipe} comment'
+
+
+class Upvote(models.Model):
+    recipe = models.ForeignKey(Recipe, related_name='upvotes',
+                               on_delete=models.CASCADE)
+    voted_by = models.ForeignKey(User, on_delete=models.CASCADE)
+    voted_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('recipe', 'voted_by')

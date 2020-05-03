@@ -6,10 +6,11 @@ from rest_framework.exceptions import (
 from rest_framework.permissions import IsAuthenticated, AllowAny
 
 from .models import (
-    Category, Recipe
+    Category, Recipe, Review, Upvote
 )
 from .serializers import (
     CategorySerializer, RecipeSerializer,
+    ReviewSerialiZer, UpvoteSerializer
 )
 
 
@@ -133,3 +134,32 @@ class PublicRecipesDetail(generics.RetrieveAPIView):
         return queryset
 
     serializer_class = RecipeSerializer
+
+
+class RecipeReviews(viewsets.ModelViewSet):
+    permission_classes = (AllowAny,)
+    serializer_class = ReviewSerialiZer
+
+    def get_queryset(self):
+        queryset = Review.objects.all().filter(recipe=self.kwargs['pk'])
+        return queryset
+
+
+class UpVoteViewSet(viewsets.ModelViewSet):
+    permission_classes = (IsAuthenticated,)
+    serializer_class = UpvoteSerializer
+
+    def get_queryset(self):
+        queryset = Upvote.objects.all().filter(recipe=self.kwargs['pk'])
+        return queryset
+
+    # A user can only upvote a recipe once
+    def create(self, request, *args, **kwargs):
+        upvote = Upvote.objects.filter(recipe=self.kwargs['pk']).first()
+        if upvote and request.user == upvote.voted_by:
+            raise PermissionDenied(
+                "You can not vote for recipe more than once")
+        return super().create(request, *args, **kwargs)
+
+    def perform_create(self, serializer):
+        serializer.save(voted_by=self.request.user)
